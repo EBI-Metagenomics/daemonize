@@ -35,7 +35,7 @@ static struct argl_option const options[] = {
 static struct argl argl = {.options = options,
                            .args_doc = "[options] <program> [arguments ...]",
                            .doc = "Daemonize a program.",
-                           .version = "0.1.1"};
+                           .version = "0.1.2"};
 
 static void noreturn fatalxc(int excode, char const *fmt, ...);
 #define fatal(...) fatalxc(EXIT_FAILURE, __VA_ARGS__)
@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");
     atexit(close_stdout);
+    close_nonstd_fds();
 
     pid_t pid = 0;
 
@@ -71,7 +72,6 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
-    close_nonstd_fds();
     if (setsid() < 0) fatal("setsid failed");
 
     create_pipes(argl_get(&argl, "stdin"), argl_get(&argl, "stdout"),
@@ -164,10 +164,8 @@ static void create_pipes(char const *restrict file0, char const *restrict file1,
     }
 }
 
-/* Source: OpenSIPS */
 static void close_nonstd_fds(void)
 {
-    /* 32 is the maximum number of inherited open file descriptors */
-    for (int r = 3; r < 32; r++)
-        close(r);
+    for (int fd = _SC_OPEN_MAX; fd > 2; fd--)
+        close(fd);
 }

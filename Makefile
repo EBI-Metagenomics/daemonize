@@ -1,6 +1,6 @@
 .POSIX:
 
-DAEMONIZE_VERSION := 0.1.1
+DAEMONIZE_VERSION := 0.1.2
 
 CC := gcc
 CFLAGS := $(CFLAGS) -std=c11 -Wall -Wextra
