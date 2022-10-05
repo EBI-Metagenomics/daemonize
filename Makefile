@@ -1,6 +1,6 @@
 .POSIX:
 
-DAEMONIZE_VERSION := 0.1.2
+DAEMONIZE_VERSION := 0.1.3
 
 CC := gcc
 CFLAGS := $(CFLAGS) -std=c11 -Wall -Wextra
@@ -39,7 +39,7 @@ dist:
 	rm -rf daemonize-$(DAEMONIZE_VERSION)
 
 distclean:
-	rm -f daemonize-$(DAEMONIZE_VERSION).tar.gz
+	rm -f daemonize-*.tar.gz
 
 ACTUAL = $(shell ls *.tar.gz)
 DESIRED = $(shell echo "daemonize-"`./daemonize --version | cut -f 3 -d' '`".tar.gz")

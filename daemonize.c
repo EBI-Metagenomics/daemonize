@@ -1,6 +1,6 @@
 #include "argless.h"
 
-// Acknowledgement: util-linux
+// Acknowledgement: util-linux, git, and https://stackoverflow.com/a/17955149
 
 #define _POSIX_C_SOURCE 200112L
 #define _DARWIN_C_SOURCE 1
@@ -13,12 +13,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
-#ifdef NULL
-#undef NULL
-#endif
-
-#define NULL ((void *)0)
 
 static struct argl_option const options[] = {
     {"stdin", 'i', ARGL_TEXT("STDIN", "stdin"),
@@ -35,52 +29,61 @@ static struct argl_option const options[] = {
 static struct argl argl = {.options = options,
                            .args_doc = "[options] <program> [arguments ...]",
                            .doc = "Daemonize a program.",
-                           .version = "0.1.2"};
+                           .version = "0.1.3"};
 
 static void noreturn fatalxc(int excode, char const *fmt, ...);
 #define fatal(...) fatalxc(EXIT_FAILURE, __VA_ARGS__)
 static void noreturn pfatal(char const *fmt, ...);
-
-static void close_stdout(void);
-static void create_pipes(char const *restrict file0, char const *restrict file1,
-                         char const *restrict file2);
-static void save_pidfile(char const *filepath, int pid);
-static void close_nonstd_fds(void);
-
 #define EX_EXEC_FAILED 126 /* Program located, but not usable. */
 #define EX_EXEC_ENOENT 127 /* Could not find program to exec.  */
 #define fatalexec(x)                                                           \
     fatalxc(errno == ENOENT ? EX_EXEC_ENOENT : EX_EXEC_FAILED,                 \
             "failed to execute %s", x);
 
+static void close_stdout(void);
+static void close_all_fds(void);
+static void daemonize(char const *pidfile);
+static void create_fifos(char const *f0, char const *f1, char const *f2);
+
 int main(int argc, char *argv[])
 {
     argl_parse(&argl, argc, argv);
     if (argl_nargs(&argl) == 0) argl_usage(&argl);
+    char const *fpin = argl_get(&argl, "stdin");
+    char const *fpout = argl_get(&argl, "stdout");
+    char const *fperr = argl_get(&argl, "stderr");
+    char const *pidfile = argl_get(&argl, "pidfile");
+    char const *program = argl_args(&argl)[0];
+    char **args = argl_args(&argl);
 
     setlocale(LC_ALL, "");
     atexit(close_stdout);
-    close_nonstd_fds();
+    close_all_fds();
 
-    pid_t pid = 0;
-
-    if ((pid = fork()) < 0)
-        fatal("fork failed");
-    else if (pid != 0)
-    {
-        save_pidfile(argl_get(&argl, "pidfile"), pid);
-        return EXIT_SUCCESS;
-    }
-
+    daemonize(NULL);
     if (setsid() < 0) fatal("setsid failed");
+    daemonize(pidfile);
 
-    create_pipes(argl_get(&argl, "stdin"), argl_get(&argl, "stdout"),
-                 argl_get(&argl, "stderr"));
+    create_fifos(fpin, fpout, fperr);
 
-    char const *file = argl_args(&argl)[0];
-    execvp(file, argl_args(&argl));
-    fatalexec(file);
+    execvp(program, args);
+    fatalexec(program);
+
     return 0;
+}
+
+static void save_pidfile(char const *filepath, int pid);
+
+static void daemonize(char const *pidfile)
+{
+    pid_t pid = fork();
+
+    if (pid < 0) fatal("fork failed");
+    if (pid != 0)
+    {
+        if (pidfile) save_pidfile(pidfile, pid);
+        exit(EXIT_SUCCESS);
+    }
 }
 
 static void save_pidfile(char const *filepath, int pid)
@@ -147,10 +150,9 @@ static void close_stdout(void)
     if (flush_standard_stream(stderr) != 0) exit(EXIT_FAILURE);
 }
 
-static void create_pipes(char const *restrict file0, char const *restrict file1,
-                         char const *restrict file2)
+static void create_fifos(char const *f0, char const *f1, char const *f2)
 {
-    char const *files[] = {file0, file1, file2};
+    char const *files[] = {f0, f1, f2};
     FILE *fps[] = {stdin, stdout, stderr};
     char const *modes[] = {"r", "a", "a"};
 
@@ -164,8 +166,8 @@ static void create_pipes(char const *restrict file0, char const *restrict file1,
     }
 }
 
-static void close_nonstd_fds(void)
+static void close_all_fds(void)
 {
-    for (int fd = _SC_OPEN_MAX; fd > 2; fd--)
+    for (int fd = _SC_OPEN_MAX; fd >= 0; fd--)
         close(fd);
 }
