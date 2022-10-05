@@ -32,7 +32,7 @@ test check: daemonize
 	rm -f stdin stdout stderr pid
 
 
-dist: clean
+dist:
 	mkdir -p daemonize-$(DAEMONIZE_VERSION)
 	cp -R LICENSE Makefile README.md argless.c argless.h daemonize.c daemonize-$(DAEMONIZE_VERSION)
 	tar -cf - daemonize-$(DAEMONIZE_VERSION) | gzip > daemonize-$(DAEMONIZE_VERSION).tar.gz
@@ -41,7 +41,14 @@ dist: clean
 distclean:
 	rm -f daemonize-$(DAEMONIZE_VERSION).tar.gz
 
+ACTUAL = $(shell ls *.tar.gz)
+DESIRED = $(shell echo "daemonize-"`./daemonize --version | cut -f 3 -d' '`".tar.gz")
+
+
+distcheck: dist daemonize
+	test $(ACTUAL) = $(DESIRED)
+
 clean: distclean
 	rm -f daemonize $(OBJ) stdin stdout stderr pid
 
-.PHONY: all clean dist distclean test check
+.PHONY: all clean dist distclean test distcheck check
