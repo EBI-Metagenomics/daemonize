@@ -35,7 +35,7 @@ static struct argl_option const options[] = {
 static struct argl argl = {.options = options,
                            .args_doc = "[options] <program> [arguments ...]",
                            .doc = "Daemonize a program.",
-                           .version = "0.1.0"};
+                           .version = "0.1.1"};
 
 static void noreturn fatalxc(int excode, char const *fmt, ...);
 #define fatal(...) fatalxc(EXIT_FAILURE, __VA_ARGS__)
@@ -44,7 +44,8 @@ static void noreturn pfatal(char const *fmt, ...);
 static void close_stdout(void);
 static void create_pipes(char const *restrict file0, char const *restrict file1,
                          char const *restrict file2);
-void save_pidfile(char const *filepath, int pid);
+static void save_pidfile(char const *filepath, int pid);
+static void close_nonstd_fds(void);
 
 #define EX_EXEC_FAILED 126 /* Program located, but not usable. */
 #define EX_EXEC_ENOENT 127 /* Could not find program to exec.  */
@@ -70,6 +71,7 @@ int main(int argc, char *argv[])
         return EXIT_SUCCESS;
     }
 
+    close_nonstd_fds();
     if (setsid() < 0) fatal("setsid failed");
 
     create_pipes(argl_get(&argl, "stdin"), argl_get(&argl, "stdout"),
@@ -81,7 +83,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void save_pidfile(char const *filepath, int pid)
+static void save_pidfile(char const *filepath, int pid)
 {
     FILE *fp = fopen(filepath, "wb");
     if (!fp) pfatal("failed to open %s", filepath);
@@ -160,4 +162,12 @@ static void create_pipes(char const *restrict file0, char const *restrict file1,
         if (!freopen(files[i], modes[i], fps[i]))
             pfatal("freopen failed for %s", files[i]);
     }
+}
+
+/* Source: OpenSIPS */
+static void close_nonstd_fds(void)
+{
+    /* 32 is the maximum number of inherited open file descriptors */
+    for (int r = 3; r < 32; r++)
+        close(r);
 }
