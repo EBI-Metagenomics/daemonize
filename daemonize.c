@@ -41,7 +41,7 @@ static void noreturn pfatal(char const *fmt, ...);
             "failed to execute %s", x);
 
 static void close_stdout(void);
-static void close_all_fds(void);
+static void close_all_nonstd_fds(void);
 static void daemonize(char const *pidfile);
 static void create_fifos(char const *f0, char const *f1, char const *f2);
 
@@ -58,7 +58,10 @@ int main(int argc, char *argv[])
 
     setlocale(LC_ALL, "");
     atexit(close_stdout);
-    close_all_fds();
+    close(0);
+    close(1);
+    close(2);
+    close_all_nonstd_fds();
 
     daemonize(NULL);
     if (setsid() < 0) fatal("setsid failed");
@@ -160,14 +163,17 @@ static void create_fifos(char const *f0, char const *f1, char const *f2)
     {
         if (mkfifo(files[i], 0666) < 0)
             pfatal("mkfifo failed for %s", files[i]);
+    }
 
+    for (int i = 0; i < 3; ++i)
+    {
         if (!freopen(files[i], modes[i], fps[i]))
             pfatal("freopen failed for %s", files[i]);
     }
 }
 
-static void close_all_fds(void)
+static void close_all_nonstd_fds(void)
 {
-    for (int fd = _SC_OPEN_MAX; fd >= 0; fd--)
+    for (int fd = _SC_OPEN_MAX; fd > 2; fd--)
         close(fd);
 }

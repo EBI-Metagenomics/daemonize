@@ -3,7 +3,7 @@
 DAEMONIZE_VERSION := 0.1.3
 
 CC := gcc
-CFLAGS := $(CFLAGS) -std=c11 -Wall -Wextra
+CFLAGS := $(CFLAGS) -std=c11 -O3 -Wall -Wextra
 
 SRC := daemonize.c argless.c
 OBJ := $(SRC:.c=.o)
