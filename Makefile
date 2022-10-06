@@ -1,12 +1,15 @@
 .POSIX:
 
-DAEMONIZE_VERSION := 0.1.3
+DAEMONIZE_VERSION := 0.1.4
 
 CC := gcc
 CFLAGS := $(CFLAGS) -std=c11 -O3 -Wall -Wextra
 
 SRC := daemonize.c argless.c
 OBJ := $(SRC:.c=.o)
+
+PREFIX ?= $(HOME)
+
 
 all: daemonize
 
@@ -51,4 +54,12 @@ distcheck: dist daemonize
 clean: distclean
 	rm -f daemonize $(OBJ) stdin stdout stderr pid
 
-.PHONY: all clean dist distclean test distcheck check
+install: daemonize
+	mkdir -p $(DESTDIR)$(PREFIX)/bin
+	cp -f daemonize $(DESTDIR)$(PREFIX)/bin
+	chmod 755 $(DESTDIR)$(PREFIX)/bin/daemonize
+
+uninstall:
+	rm -f $(DESTDIR)$(PREFIX)/bin/daemonize
+
+.PHONY: all clean dist distclean test distcheck check install uninstall

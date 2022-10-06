@@ -29,7 +29,7 @@ static struct argl_option const options[] = {
 static struct argl argl = {.options = options,
                            .args_doc = "[options] <program> [arguments ...]",
                            .doc = "Daemonize a program.",
-                           .version = "0.1.3"};
+                           .version = "0.1.4"};
 
 static void noreturn fatalxc(int excode, char const *fmt, ...);
 #define fatal(...) fatalxc(EXIT_FAILURE, __VA_ARGS__)
