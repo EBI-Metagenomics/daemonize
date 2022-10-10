@@ -31,9 +31,9 @@ static struct argl argl = {.options = options,
                            .doc = "Daemonize a program.",
                            .version = "0.1.5"};
 
-static void noreturn fatalxc(int excode, char const *fmt, ...);
+static noreturn void fatalxc(int excode, char const *fmt, ...);
 #define fatal(...) fatalxc(EXIT_FAILURE, __VA_ARGS__)
-static void noreturn pfatal(char const *fmt, ...);
+static noreturn void pfatal(char const *fmt, ...);
 #define EX_EXEC_FAILED 126 /* Program located, but not usable. */
 #define EX_EXEC_ENOENT 127 /* Could not find program to exec.  */
 #define fatalexec(x)                                                           \
@@ -124,7 +124,7 @@ error:
     return (errno == EBADF) ? 0 : EOF;
 }
 
-static void noreturn fatalxc(int excode, char const *fmt, ...)
+static noreturn void fatalxc(int excode, char const *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -134,7 +134,7 @@ static void noreturn fatalxc(int excode, char const *fmt, ...)
     exit(excode);
 }
 
-static void noreturn pfatal(char const *fmt, ...)
+static noreturn void pfatal(char const *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
