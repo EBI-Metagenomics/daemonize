@@ -585,10 +585,12 @@ char **argl_args(struct argl const *al)
     return argvec_args(al->argc, al->argv, al->options);
 }
 
-void argl_usage(struct argl const *al)
+void argl_usage(struct argl const *al) { argl_usage2(al, EXIT_FAILURE); }
+
+void argl_usage2(struct argl const *al, int exit_status)
 {
     char const *program = al_basename(al->argv[0]);
-    help_usage(program, al->options, EXIT_FAILURE);
+    help_usage(program, al->options, exit_status);
 }
 
 char const *argl_program(struct argl const *al)

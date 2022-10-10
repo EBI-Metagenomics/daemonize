@@ -22,6 +22,7 @@ char const *argl_get(struct argl const *, char const *name);
 int argl_nargs(struct argl const *);
 char **argl_args(struct argl const *);
 void argl_usage(struct argl const *);
+void argl_usage2(struct argl const *, int exit_status);
 char const *argl_program(struct argl const *);
 
 struct argl_text
@@ -54,12 +55,20 @@ enum
 #define ARGL_TEXT(NAME, DEFAULT)                                               \
     (struct argl_def)                                                          \
     {                                                                          \
-        ARGL_TEXT_TYPE, .s = { NAME, DEFAULT }                                 \
+        ARGL_TEXT_TYPE,                                                        \
+        {                                                                      \
+            .s = { NAME, DEFAULT }                                             \
+        }                                                                      \
     }
 #define ARGL_FLAG()                                                            \
     (struct argl_def)                                                          \
     {                                                                          \
-        ARGL_FLAG_TYPE, { 0 }                                                  \
+        ARGL_FLAG_TYPE,                                                        \
+        {                                                                      \
+            {                                                                  \
+                0                                                              \
+            }                                                                  \
+        }                                                                      \
     }
 
 struct argl_option
