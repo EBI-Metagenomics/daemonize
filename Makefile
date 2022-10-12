@@ -1,9 +1,9 @@
 .POSIX:
 
-DAEMONIZE_VERSION := 0.1.6
+DAEMONIZE_VERSION := 0.1.7
 
 CC := gcc
-CFLAGS := $(CFLAGS) -std=c11 -O3 -Wall -Wextra
+CFLAGS := $(CFLAGS) -std=c11 -g -Wall -Wextra
 
 SRC := daemonize.c argless.c
 OBJ := $(SRC:.c=.o)
@@ -23,7 +23,7 @@ daemonize: $(OBJ)
 
 test check: daemonize
 	rm -f stdin stdout stderr pid
-	./daemonize sleep 10
+	./daemonize sleep -- 3
 	sleep 1
 	tee -a >stdin &
 	tail -f stdout &

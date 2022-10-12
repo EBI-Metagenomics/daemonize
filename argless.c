@@ -210,10 +210,12 @@ static char const *opt_arg_name(struct argl_option const *opt)
 static bool argvec_check_valid(int argc, char *argv[],
                                struct argl_option const *opts, bool die)
 {
+    bool force_arg = false;
     char const *prg = al_basename(argv[0]);
     for (int i = 1; i < argc; ++i)
     {
-        if (!arg_is_opt(argv[i])) continue;
+        if (!strcmp(argv[i], "--")) force_arg = true;
+        if (force_arg || !arg_is_opt(argv[i])) continue;
 
         struct argl_option const *opt = opts_search(opts, argv[i]);
         if (!opt)
@@ -225,7 +227,8 @@ static bool argvec_check_valid(int argc, char *argv[],
         if (!opt_is_flag(opt))
         {
             if (arg_is_opt_compact(argv[i])) continue;
-            if (i + 1 == argc || arg_is_opt(argv[i + 1]))
+            if (i + 1 == argc || arg_is_opt(argv[i + 1]) ||
+                !strcmp(argv[i + 1], "--"))
             {
                 if (die) help_requires_arg(prg, argv[i], EXIT_FAILURE);
                 return false;
@@ -246,10 +249,12 @@ static bool argvec_check_valid(int argc, char *argv[],
 
 static void argvec_sort(int argc, char *argv[], struct argl_option const *opts)
 {
+    bool force_arg = false;
     char *first_arg = 0;
     for (int i = 1; i < argc && first_arg != argv[i]; ++i)
     {
-        if (!arg_is_opt(argv[i]))
+        if (!strcmp(argv[i], "--")) force_arg = true;
+        if (force_arg || !arg_is_opt(argv[i]))
         {
             char *curr = argv[i];
             size_t size = argc - 1 - i;
@@ -294,6 +299,7 @@ static int argvec_nargs(int argc, char *argv[], struct argl_option const *opts)
 static char **argvec_args(int argc, char *argv[],
                           struct argl_option const *opts)
 {
+    argvec_sort(argc, argv, opts);
     int i = 1;
     for (; i < argc; ++i)
     {
@@ -558,7 +564,8 @@ void argl_parse(struct argl *al, int argc, char *argv[])
 
 bool argl_has(struct argl const *al, char const *name)
 {
-    return argvec_has(al->argc, al->argv, al->options, name);
+    int n = al->argc - argvec_nargs(al->argc, al->argv, al->options);
+    return argvec_has(n, al->argv, al->options, name);
 }
 
 char const *argl_get(struct argl const *al, char const *name)

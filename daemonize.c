@@ -44,6 +44,7 @@ static void close_stdout(void);
 static void close_all_nonstd_fds(void);
 static void daemonize(char const *pidfile);
 static void create_fifos(char const *f0, char const *f1, char const *f2);
+static void pop_double_dash(int argc, char *argv[]);
 
 int main(int argc, char *argv[])
 {
@@ -55,6 +56,7 @@ int main(int argc, char *argv[])
     char const *pidfile = argl_get(&argl, "pidfile");
     char const *program = argl_args(&argl)[0];
     char **args = argl_args(&argl);
+    pop_double_dash(argl_nargs(&argl), args);
 
     setlocale(LC_ALL, "");
     atexit(close_stdout);
@@ -176,4 +178,20 @@ static void close_all_nonstd_fds(void)
 {
     for (int fd = _SC_OPEN_MAX; fd > 2; fd--)
         close(fd);
+}
+
+static int double_dash_index(int argc, char *argv[])
+{
+    for (int i = 0; i < argc; ++i)
+    {
+        if (!strcmp(argv[i], "--")) return i;
+    }
+    return -1;
+}
+
+static void pop_double_dash(int argc, char *argv[])
+{
+    int i = double_dash_index(argc, argv);
+    if (i < 0) return;
+    memmove(argv + i, argv + i + 1, sizeof(argv[0]) * (argc - i));
 }
